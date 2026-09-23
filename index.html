@@ -1,0 +1,2280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Công cụ nhập kỳ, dự đoán và phân tích</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06130f;
+      --panel: #0b1d18;
+      --panel-2: #10231d;
+      --panel-3: #132b24;
+      --line: rgba(76, 203, 156, 0.28);
+      --line-strong: rgba(76, 203, 156, 0.55);
+      --text: #edfdf8;
+      --muted: #9bb7ad;
+      --green: #22c55e;
+      --cyan: #2dd4bf;
+      --amber: #f59e0b;
+      --red: #f87171;
+      --blue: #38bdf8;
+      --shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 14% 10%, rgba(45, 212, 191, 0.16), transparent 28%),
+        radial-gradient(circle at 88% 8%, rgba(245, 158, 11, 0.12), transparent 26%),
+        linear-gradient(160deg, #020b08 0%, #06130f 48%, #03100b 100%);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+    }
+
+    .app {
+      width: min(1320px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    .shell {
+      min-height: calc(100vh - 28px);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(5, 18, 14, 0.84);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screen {
+      min-height: calc(100vh - 28px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .auth-card {
+      width: min(560px, 100%);
+      background: rgba(9, 28, 23, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .auth-title {
+      margin: 0 0 8px;
+      font-size: 24px;
+      line-height: 1.15;
+      color: #a7fff0;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .auth-subtitle {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .warning {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 10px;
+      padding: 12px;
+      color: #fde68a;
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
+    .check-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px;
+      margin-top: 8px;
+      background: rgba(2, 10, 8, 0.48);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 10px;
+      color: #d7f7ee;
+      font-size: 13px;
+      line-height: 1.35;
+      cursor: pointer;
+    }
+
+    .check-row input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--cyan);
+      flex: 0 0 auto;
+    }
+
+    .form-row {
+      margin-top: 12px;
+    }
+
+    .label {
+      display: block;
+      margin: 0 0 7px;
+      color: #8eeedc;
+      font-weight: 800;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .input,
+    .select {
+      width: 100%;
+      min-height: 42px;
+      color: var(--text);
+      background: rgba(1, 9, 7, 0.72);
+      border: 1px solid rgba(76, 203, 156, 0.28);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: 0;
+    }
+
+    .input:focus,
+    .select:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.12);
+    }
+
+    .btn {
+      min-height: 40px;
+      padding: 10px 13px;
+      border-radius: 9px;
+      color: var(--text);
+      background: #123229;
+      border: 1px solid rgba(76, 203, 156, 0.24);
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease, opacity 0.12s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--line-strong);
+      background: #173b31;
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary {
+      color: #03120e;
+      background: linear-gradient(135deg, #45f5d5, #ffd166);
+      border-color: transparent;
+    }
+
+    .btn-danger {
+      background: rgba(127, 29, 29, 0.72);
+      border-color: rgba(248, 113, 113, 0.35);
+      color: #fecaca;
+    }
+
+    .btn-ghost {
+      background: rgba(2, 10, 8, 0.44);
+      color: #c7e9df;
+    }
+
+    .error {
+      display: none;
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(127, 29, 29, 0.55);
+      border: 1px solid rgba(248, 113, 113, 0.38);
+      color: #fecaca;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(8, 26, 21, 0.95);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: #06130f;
+      font-weight: 900;
+      background: linear-gradient(135deg, #2dd4bf, #f59e0b);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .brand small {
+      color: var(--muted);
+      font-size: 11px;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 28px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(45, 212, 191, 0.1);
+      border: 1px solid rgba(45, 212, 191, 0.28);
+      color: #a7fff0;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      padding: 10px;
+      background: rgba(2, 10, 8, 0.36);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.13);
+    }
+
+    .tab {
+      flex: 1;
+      min-height: 40px;
+      border-radius: 10px;
+      color: #b8d6cd;
+      background: rgba(6, 19, 15, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .tab.active {
+      color: #04110d;
+      background: linear-gradient(135deg, #2dd4bf, #f59e0b);
+      border-color: transparent;
+    }
+
+    .game-view {
+      display: none;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .game-view.active {
+      display: block;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(330px, 0.95fr) minmax(380px, 1.35fr);
+      gap: 12px;
+      padding: 12px;
+      min-height: 0;
+    }
+
+    .panel {
+      background: rgba(9, 28, 23, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 12px 38px rgba(0, 0, 0, 0.2);
+      min-width: 0;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(76, 203, 156, 0.18);
+      background: rgba(3, 16, 12, 0.42);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 900;
+      color: #e9fffa;
+      text-transform: uppercase;
+    }
+
+    .panel-body {
+      padding: 12px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .row.nowrap {
+      flex-wrap: nowrap;
+    }
+
+    .grow {
+      flex: 1 1 180px;
+      min-width: 0;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .dice-row,
+    .coin-row {
+      display: grid;
+      grid-template-columns: 76px 1fr;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .mini-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .choice-btn {
+      min-height: 38px;
+      border-radius: 9px;
+      color: #d9fff6;
+      background: rgba(8, 36, 29, 0.82);
+      border: 1px solid rgba(76, 203, 156, 0.2);
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .choice-btn:hover {
+      border-color: rgba(45, 212, 191, 0.72);
+    }
+
+    .choice-btn.selected {
+      color: #04110d;
+      background: linear-gradient(135deg, #5eead4, #fbbf24);
+      border-color: transparent;
+    }
+
+    .dice-display {
+      display: grid;
+      grid-template-columns: repeat(3, 74px);
+      gap: 9px;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      min-height: 116px;
+      border-radius: 12px;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.12), transparent 68%),
+        rgba(1, 8, 6, 0.55);
+      border: 1px solid rgba(76, 203, 156, 0.2);
+    }
+
+    .die {
+      width: 74px;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      color: #111827;
+      background: #f8fafc;
+      border: 2px solid #d1d5db;
+      display: grid;
+      place-items: center;
+      font-size: 28px;
+      font-weight: 900;
+      box-shadow: inset 0 -8px 0 rgba(15, 23, 42, 0.08), 0 12px 22px rgba(0, 0, 0, 0.22);
+    }
+
+    .die.empty {
+      color: #94a3b8;
+      background: #1f2937;
+      border-color: #334155;
+    }
+
+    .coin-display {
+      display: grid;
+      grid-template-columns: repeat(4, 54px);
+      justify-content: center;
+      gap: 10px;
+      padding: 16px;
+      min-height: 104px;
+      border-radius: 12px;
+      background: rgba(1, 8, 6, 0.55);
+      border: 1px solid rgba(76, 203, 156, 0.2);
+    }
+
+    .coin {
+      width: 54px;
+      aspect-ratio: 1;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 900;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.18), 0 12px 24px rgba(0, 0, 0, 0.24);
+    }
+
+    .coin.white {
+      color: #0f172a;
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+
+    .coin.red {
+      color: #fee2e2;
+      background: #b91c1c;
+      border-color: #ef4444;
+    }
+
+    .coin.empty {
+      color: #94a3b8;
+      background: #1f2937;
+      border-color: #334155;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .metric {
+      min-height: 68px;
+      border-radius: 10px;
+      background: rgba(1, 8, 6, 0.44);
+      border: 1px solid rgba(76, 203, 156, 0.18);
+      padding: 10px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .metric strong {
+      display: block;
+      color: #effffb;
+      font-size: 18px;
+      line-height: 1.1;
+    }
+
+    .history-strip {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 9px;
+      min-height: 54px;
+      background: rgba(1, 8, 6, 0.5);
+      border: 1px solid rgba(76, 203, 156, 0.16);
+      border-radius: 10px;
+    }
+
+    .history-chip {
+      flex: 0 0 auto;
+      min-width: 58px;
+      border-radius: 9px;
+      padding: 6px 7px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(15, 36, 30, 0.9);
+      text-align: center;
+    }
+
+    .history-chip b {
+      display: block;
+      font-size: 12px;
+      color: #fff7ed;
+      margin-bottom: 3px;
+    }
+
+    .history-chip span {
+      display: block;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .section-title {
+      margin: 0 0 8px;
+      color: #dffdf6;
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .analysis-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid rgba(76, 203, 156, 0.16);
+      border-radius: 10px;
+      background: rgba(1, 8, 6, 0.42);
+    }
+
+    table {
+      width: 100%;
+      min-width: 540px;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th,
+    td {
+      padding: 8px 9px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      color: #9ff7e8;
+      background: rgba(5, 28, 22, 0.86);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .rate {
+      font-weight: 900;
+      color: #effffb;
+    }
+
+    .profit-good {
+      color: #86efac;
+      font-weight: 900;
+    }
+
+    .profit-bad {
+      color: #fca5a5;
+      font-weight: 900;
+    }
+
+    .profit-flat {
+      color: #fde68a;
+      font-weight: 900;
+    }
+
+    .notice {
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(14, 116, 144, 0.12);
+      border: 1px solid rgba(45, 212, 191, 0.2);
+      color: #c6fff6;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .empty {
+      min-height: 76px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      border: 1px dashed rgba(148, 163, 184, 0.24);
+      border-radius: 10px;
+      font-size: 13px;
+      text-align: center;
+      padding: 16px;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .combo-tools {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .combo-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+      max-height: 220px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .combo-btn {
+      min-height: 42px;
+      border-radius: 9px;
+      color: #d9fff6;
+      background: rgba(8, 36, 29, 0.82);
+      border: 1px solid rgba(76, 203, 156, 0.2);
+      cursor: pointer;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .combo-btn small {
+      display: block;
+      margin-top: 2px;
+      color: #a8c8be;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .combo-btn:hover {
+      border-color: rgba(45, 212, 191, 0.72);
+    }
+
+    .prediction-card {
+      border-radius: 12px;
+      border: 1px solid rgba(245, 158, 11, 0.28);
+      background:
+        linear-gradient(145deg, rgba(245, 158, 11, 0.12), rgba(45, 212, 191, 0.08)),
+        rgba(1, 8, 6, 0.48);
+      padding: 12px;
+    }
+
+    .prediction-main {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 10px;
+    }
+
+    .pick-box {
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(1, 8, 6, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .pick-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .pick-box strong {
+      display: block;
+      color: #fff7ed;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .suggestion-list {
+      display: grid;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .suggestion-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      border-radius: 9px;
+      padding: 8px 9px;
+      background: rgba(1, 8, 6, 0.42);
+      border: 1px solid rgba(76, 203, 156, 0.14);
+      font-size: 12px;
+    }
+
+    .suggestion-item b {
+      color: #fef3c7;
+    }
+
+    .prediction-v2 {
+      display: grid;
+      gap: 12px;
+    }
+
+    .prediction-hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(1, 8, 6, 0.46);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .prediction-hero span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .prediction-hero strong {
+      display: block;
+      color: #fff7ed;
+      font-size: 24px;
+      line-height: 1.1;
+    }
+
+    .math-chip {
+      min-width: 136px;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 900;
+      color: #fecaca;
+      background: rgba(127, 29, 29, 0.36);
+      border: 1px solid rgba(248, 113, 113, 0.34);
+    }
+
+    .math-chip.good {
+      color: #bbf7d0;
+      background: rgba(22, 101, 52, 0.34);
+      border-color: rgba(134, 239, 172, 0.34);
+    }
+
+    .bet-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .bet-card {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 10px;
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(1, 8, 6, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .bet-card.good {
+      border-color: rgba(134, 239, 172, 0.46);
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(1, 8, 6, 0.48));
+    }
+
+    .bet-card.watch {
+      border-color: rgba(245, 158, 11, 0.36);
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(1, 8, 6, 0.48));
+    }
+
+    .bet-rank {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      color: #04110d;
+      background: linear-gradient(135deg, #5eead4, #fbbf24);
+      font-weight: 900;
+    }
+
+    .bet-name {
+      color: #effffb;
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1.15;
+    }
+
+    .bet-meta {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 3px;
+    }
+
+    .bet-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 9px;
+    }
+
+    .bet-stat {
+      border-radius: 8px;
+      padding: 7px;
+      background: rgba(2, 10, 8, 0.58);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .bet-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .bet-stat b {
+      color: #fef3c7;
+      font-size: 13px;
+    }
+
+    .bet-reason {
+      margin-top: 8px;
+      color: #c6fff6;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .standard-tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #bbf7d0;
+      background: rgba(22, 101, 52, 0.42);
+      border: 1px solid rgba(134, 239, 172, 0.32);
+      margin-top: 7px;
+    }
+
+    .standard-tag.watch {
+      color: #fde68a;
+      background: rgba(146, 64, 14, 0.42);
+      border-color: rgba(245, 158, 11, 0.34);
+    }
+
+    .bundle-numbers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .bundle-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      color: #04110d;
+      background: #d1fae5;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .bundle-formula {
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 9px;
+      color: #d7f7ee;
+      background: rgba(2, 10, 8, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .hide {
+      display: none !important;
+    }
+
+    @media (max-width: 1020px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .app {
+        padding: 0;
+      }
+
+      .shell,
+      .screen {
+        min-height: 100vh;
+        border-radius: 0;
+      }
+
+      .topbar {
+        align-items: flex-start;
+      }
+
+      .brand h1 {
+        font-size: 14px;
+      }
+
+      .top-actions {
+        gap: 6px;
+      }
+
+      .workspace {
+        padding: 8px;
+        gap: 8px;
+      }
+
+      .summary-grid,
+      .prediction-main,
+      .prediction-hero,
+      .combo-tools {
+        grid-template-columns: 1fr;
+      }
+
+      .math-chip {
+        width: 100%;
+      }
+
+      .bet-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .dice-row,
+      .coin-row {
+        grid-template-columns: 1fr;
+      }
+
+      .quick-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .preset-grid,
+      .combo-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .dice-display {
+        grid-template-columns: repeat(3, 58px);
+      }
+
+      .die {
+        width: 58px;
+        border-radius: 10px;
+      }
+
+      .coin-display {
+        grid-template-columns: repeat(4, 44px);
+      }
+
+      .coin {
+        width: 44px;
+      }
+
+      .btn,
+      .tab {
+        white-space: normal;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="shell">
+      <section id="disclaimerScreen" class="screen">
+        <div class="auth-card">
+          <h1 class="auth-title">Cảnh báo quản trị rủi ro</h1>
+          <p class="auth-subtitle">File này dùng để nhập kết quả, xem thống kê và dự đoán tham khảo theo lịch sử bạn đã nhập.</p>
+          <div class="warning">
+            Công cụ không thể đảm bảo kỳ sau ra đúng. Dữ liệu càng ít thì dự đoán càng nhiễu, nên chỉ dùng như bảng phân tích tham khảo.
+          </div>
+          <label class="check-row">
+            <input id="risk1" type="checkbox" />
+            <span>Tôi hiểu đây là công cụ thống kê tham khảo, không đảm bảo chiến thắng.</span>
+          </label>
+          <label class="check-row">
+            <input id="risk2" type="checkbox" />
+            <span>Tôi tự chịu trách nhiệm với mọi quyết định dùng vốn của mình.</span>
+          </label>
+          <label class="check-row">
+            <input id="risk3" type="checkbox" />
+            <span>Tôi sẽ dừng lại khi vượt giới hạn rủi ro đã đặt ra.</span>
+          </label>
+          <div class="form-row">
+            <button id="acceptBtn" class="btn btn-primary" style="width:100%" disabled>Đồng ý và tiếp tục</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="loginScreen" class="screen hide">
+        <div class="auth-card">
+          <h1 class="auth-title">Casino AI Portal</h1>
+          <p class="auth-subtitle">Tài khoản: admin. Mật khẩu: 123456.</p>
+          <form id="loginForm">
+            <div class="form-row">
+              <label class="label" for="username">Tài khoản</label>
+              <input id="username" class="input" autocomplete="username" placeholder="admin" />
+            </div>
+            <div class="form-row">
+              <label class="label" for="password">Mật khẩu</label>
+              <input id="password" class="input" type="password" autocomplete="current-password" placeholder="123456" />
+            </div>
+            <div id="loginError" class="error">Tài khoản hoặc mật khẩu không đúng.</div>
+            <div class="form-row">
+              <button class="btn btn-primary" style="width:100%" type="submit">Xác nhận đăng nhập</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <main id="mainApp" class="hide">
+        <header class="topbar">
+          <div class="brand">
+            <div class="brand-mark">TX</div>
+            <div>
+              <h1>Công cụ nhập kỳ, dự đoán và phân tích</h1>
+              <small>Dữ liệu lưu trên trình duyệt của máy này</small>
+            </div>
+          </div>
+          <div class="top-actions">
+            <span class="pill">admin PLUS</span>
+            <button id="logoutBtn" class="btn btn-ghost">Thoát</button>
+          </div>
+        </header>
+
+        <nav class="tabs">
+          <button id="tabTaiXiu" class="tab active" type="button">Extra Tài Xỉu</button>
+          <button id="tabXocDia" class="tab" type="button">Xóc Đĩa</button>
+        </nav>
+
+        <section id="viewTaiXiu" class="game-view active">
+          <div class="workspace">
+            <div class="stack">
+              <section class="panel">
+                <div class="panel-head">
+                  <h2 class="panel-title">Nhập kết quả nhanh Tài Xỉu</h2>
+                  <span id="txReadyPill" class="pill">Chưa đủ 3 xúc sắc</span>
+                </div>
+                <div class="panel-body stack">
+                  <div class="dice-display" id="txDiceDisplay"></div>
+
+                  <div class="row nowrap">
+                    <div class="grow">
+                      <label class="label" for="txPeriod">Mã kỳ</label>
+                      <input id="txPeriod" class="input" inputmode="numeric" />
+                    </div>
+                    <button id="txSaveBtn" class="btn btn-primary" type="button">Nhập kỳ</button>
+                  </div>
+
+                  <div>
+                    <h3 class="section-title">Dán nhanh kết quả</h3>
+                    <div class="row nowrap">
+                      <input id="txPaste" class="input grow" placeholder="Ví dụ: 456 hoặc 4 5 6" />
+                      <button id="txPasteBtn" class="btn" type="button">Dùng</button>
+                    </div>
+                    <div class="subtle">Bạn có thể gõ 456 thay vì nhập từng mặt xúc sắc.</div>
+                  </div>
+
+                  <div>
+                    <h3 class="section-title">Chọn từng xúc sắc</h3>
+                    <div id="txDicePicker"></div>
+                  </div>
+
+                  <div>
+                    <h3 class="section-title">Tổ hợp nhanh</h3>
+                    <div class="combo-tools">
+                      <select id="txComboSide" class="select">
+                        <option value="all">Tất cả cửa</option>
+                        <option value="Tài">Tài</option>
+                        <option value="Xỉu">Xỉu</option>
+                        <option value="Bão">Bão</option>
+                      </select>
+                      <select id="txComboTotal" class="select"></select>
+                    </div>
+                    <div id="txComboGrid" class="combo-grid"></div>
+                  </div>
+
+                  <div class="row">
+                    <button id="txClearPickBtn" class="btn btn-ghost" type="button">Xóa lựa chọn</button>
+                    <button id="txUndoBtn" class="btn btn-ghost" type="button">Xóa kỳ cuối</button>
+                    <button id="txClearAllBtn" class="btn btn-danger" type="button">Xóa tất cả</button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-head">
+                  <h2 class="panel-title">Lịch sử Tài Xỉu</h2>
+                  <span id="txCount" class="pill">0 kỳ</span>
+                </div>
+                <div class="panel-body stack">
+                  <div class="summary-grid">
+                    <div class="metric"><span>Kết quả mới</span><strong id="txLastResult">--</strong></div>
+                    <div class="metric"><span>Tài / Xỉu / Bão</span><strong id="txMix">--</strong></div>
+                    <div class="metric"><span>Mặt ra nhiều</span><strong id="txHotFace">--</strong></div>
+                  </div>
+                  <div id="txHistoryStrip" class="history-strip"></div>
+                </div>
+              </section>
+            </div>
+
+            <div class="stack">
+              <section class="panel">
+                <div class="panel-head">
+                  <h2 class="panel-title">Dự đoán kỳ tới Tài Xỉu</h2>
+                  <select id="txPredictWindow" class="select" style="width:auto; min-width:150px">
+                    <option value="10">10 kỳ gần nhất</option>
+                    <option value="20" selected>20 kỳ gần nhất</option>
+                    <option value="50">50 kỳ gần nhất</option>
+                    <option value="all">Tất cả kỳ</option>
+                  </select>
+                </div>
+                <div class="panel-body">
+                  <div id="txPrediction"></div>
+                </div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-head">
+                  <h2 class="panel-title">Phân tích win-rate Tài Xỉu</h2>
+                  <select id="txWindow" class="select" style="width:auto; min-width:150px">
+                    <option value="all">Tất cả kỳ</option>
+                    <option value="10">10 kỳ gần nhất</option>
+                    <option value="20" selected>20 kỳ gần nhất</option>
+                    <option value="50">50 kỳ gần nhất</option>
+                    <option value="100">100 kỳ gần nhất</option>
+                  </select>
+                </div>
+                <div class="panel-body stack">
+                  <div class="notice">Cột lãi/lỗ là mô phỏng nếu đặt 1 đơn vị vào đúng cửa đó ở mỗi kỳ trong vùng đang xem. Đây là thống kê lịch sử, không phải cam kết kỳ sau.</div>
+                  <div id="txAnalysis" class="analysis-grid"></div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section id="viewXocDia" class="game-view">
+          <div class="workspace">
+            <div class="stack">
+              <section class="panel">
+                <div class="panel-head">
+                  <h2 class="panel-title">Nhập kết quả nhanh Xóc Đĩa</h2>
+                  <span id="xdReadyPill" class="pill">Chưa đủ 4 quân</span>
+                </div>
+                <div class="panel-body stack">
+                  <div class="coin-display" id="xdCoinDisplay"></div>
+
+                  <div class="row nowrap">
+                    <div class="grow">
+                      <label class="label" for="xdPeriod">Mã kỳ</label>
+                      <input id="xdPeriod" class="input" inputmode="numeric" />
+                    </div>
+                    <button id="xdSaveBtn" class="btn btn-primary" type="button">Nhập kỳ</button>
+                  </div>
+
+                  <div>
+                    <h3 class="section-title">Chọn nhanh theo dạng mặt</h3>
+                    <div id="xdPresetPicker" class="preset-grid"></div>
+                  </div>
+
+                  <div>
+                    <h3 class="section-title">Dán nhanh kết quả</h3>
+                    <div class="row nowrap">
+                      <input id="xdPaste" class="input grow" placeholder="Ví dụ: TTDD hoặc t d t d" />
+                      <button id="xdPasteBtn" class="btn" type="button">Dùng</button>
+                    </div>
+                    <div class="subtle">T là trắng, D là đỏ. Ví dụ TTDD là 2 trắng 2 đỏ.</div>
+                  </div>
+
+                  <div>
+                    <h3 class="section-title">Chọn từng quân</h3>
+                    <div id="xdCoinPicker"></div>
+                  </div>
+
+                  <div class="row">
+                    <button id="xdClearPickBtn" class="btn btn-ghost" type="button">Xóa lựa chọn</button>
+                    <button id="xdUndoBtn" class="btn btn-ghost" type="button">Xóa kỳ cuối</button>
+                    <button id="xdClearAllBtn" class="btn btn-danger" type="button">Xóa tất cả</button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-head">
+                  <h2 class="panel-title">Lịch sử Xóc Đĩa</h2>
+                  <span id="xdCount" class="pill">0 kỳ</span>
+                </div>
+                <div class="panel-body stack">
+                  <div class="summary-grid">
+                    <div class="metric"><span>Kết quả mới</span><strong id="xdLastResult">--</strong></div>
+                    <div class="metric"><span>Chẵn / Lẻ</span><strong id="xdMix">--</strong></div>
+                    <div class="metric"><span>Dạng ra nhiều</span><strong id="xdHotFace">--</strong></div>
+                  </div>
+                  <div id="xdHistoryStrip" class="history-strip"></div>
+                </div>
+              </section>
+            </div>
+
+            <div class="stack">
+              <section class="panel">
+                <div class="panel-head">
+                  <h2 class="panel-title">Dự đoán kỳ tới Xóc Đĩa</h2>
+                  <select id="xdPredictWindow" class="select" style="width:auto; min-width:150px">
+                    <option value="10">10 kỳ gần nhất</option>
+                    <option value="20" selected>20 kỳ gần nhất</option>
+                    <option value="50">50 kỳ gần nhất</option>
+                    <option value="all">Tất cả kỳ</option>
+                  </select>
+                </div>
+                <div class="panel-body">
+                  <div id="xdPrediction"></div>
+                </div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-head">
+                  <h2 class="panel-title">Phân tích win-rate Xóc Đĩa</h2>
+                  <select id="xdWindow" class="select" style="width:auto; min-width:150px">
+                    <option value="all">Tất cả kỳ</option>
+                    <option value="10">10 kỳ gần nhất</option>
+                    <option value="20" selected>20 kỳ gần nhất</option>
+                    <option value="50">50 kỳ gần nhất</option>
+                    <option value="100">100 kỳ gần nhất</option>
+                  </select>
+                </div>
+                <div class="panel-body stack">
+                  <div class="notice">Tài Xỉu Xóc Đĩa trong file này tính: Tài = 3 hoặc 4 trắng, Xỉu = 0 hoặc 1 trắng, 2 trắng 2 đỏ là cửa riêng.</div>
+                  <div id="xdAnalysis" class="analysis-grid"></div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const FIXED_USER = "admin";
+    const FIXED_PASS = "123456";
+    const TX_KEY = "tx_signal_history_v5";
+    const XD_KEY = "xd_signal_history_v5";
+    const DICE_VALUES = [1, 2, 3, 4, 5, 6];
+    const PREDICTION_MIN_SAMPLE = 8;
+    const PREDICTION_WIN_TARGET = 0.8;
+    const SCORE_PAYOUT = { 3: 50, 4: 50, 5: 18, 6: 14, 7: 12, 8: 8, 9: 6, 10: 6, 11: 6, 12: 6, 13: 8, 14: 12, 15: 14, 16: 18, 17: 50, 18: 50 };
+    const XD_PRESETS = [
+      { label: "4 trắng", coins: ["W", "W", "W", "W"] },
+      { label: "3 trắng", coins: ["W", "W", "W", "R"] },
+      { label: "2 - 2", coins: ["W", "W", "R", "R"] },
+      { label: "1 trắng", coins: ["W", "R", "R", "R"] },
+      { label: "4 đỏ", coins: ["R", "R", "R", "R"] }
+    ];
+
+    const state = {
+      activeTab: "tx",
+      txDice: [null, null, null],
+      xdCoins: [null, null, null, null],
+      txHistory: loadHistory(TX_KEY),
+      xdHistory: loadHistory(XD_KEY)
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
+
+    function loadHistory(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveHistory(key, data) {
+      localStorage.setItem(key, JSON.stringify(data));
+    }
+
+    function nextPeriod(history) {
+      const nums = history
+        .map((item) => Number.parseInt(String(item.period || ""), 10))
+        .filter((num) => Number.isFinite(num));
+      return String(nums.length ? Math.max(...nums) + 1 : 1);
+    }
+
+    function countBy(items, getter) {
+      return items.reduce((acc, item) => {
+        const key = getter(item);
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    function topEntry(map) {
+      const entries = Object.entries(map);
+      if (!entries.length) return "--";
+      entries.sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0]), "vi"));
+      return `${entries[0][0]} (${entries[0][1]})`;
+    }
+
+    function selectedWindow(history, value) {
+      if (value === "all") return history;
+      return history.slice(0, Number(value));
+    }
+
+    function pct(wins, total) {
+      if (!total) return "--";
+      return `${((wins / total) * 100).toFixed(1)}%`;
+    }
+
+    function profitClass(value) {
+      if (value > 0) return "profit-good";
+      if (value < 0) return "profit-bad";
+      return "profit-flat";
+    }
+
+    function profitText(value) {
+      if (!Number.isFinite(value)) return "--";
+      const fixed = Number.isInteger(value) ? String(value) : value.toFixed(2);
+      return value > 0 ? `+${fixed}` : fixed;
+    }
+
+    function isTriple(dice) {
+      return dice[0] === dice[1] && dice[1] === dice[2];
+    }
+
+    function txSideFromDice(dice) {
+      const total = dice.reduce((sum, value) => sum + value, 0);
+      if (isTriple(dice)) return "Bão";
+      if (total >= 11 && total <= 17) return "Tài";
+      return "Xỉu";
+    }
+
+    function coinInfo(coins) {
+      const white = coins.filter((coin) => coin === "W").length;
+      const red = 4 - white;
+      return {
+        white,
+        red,
+        parity: white % 2 === 0 ? "Chẵn" : "Lẻ",
+        size: white >= 3 ? "Tài" : white <= 1 ? "Xỉu" : "2-2",
+        shape: white === 4 ? "4 trắng" : white === 3 ? "3 trắng" : white === 2 ? "2-2" : white === 1 ? "1 trắng" : "4 đỏ"
+      };
+    }
+
+    function allDiceCombos() {
+      const combos = [];
+      for (let a = 1; a <= 6; a += 1) {
+        for (let b = a; b <= 6; b += 1) {
+          for (let c = b; c <= 6; c += 1) {
+            const dice = [a, b, c];
+            const total = a + b + c;
+            combos.push({ dice, total, side: txSideFromDice(dice) });
+          }
+        }
+      }
+      return combos;
+    }
+
+    const TX_COMBOS = allDiceCombos();
+
+    function showScreen(name) {
+      $("disclaimerScreen").classList.toggle("hide", name !== "disclaimer");
+      $("loginScreen").classList.toggle("hide", name !== "login");
+      $("mainApp").classList.toggle("hide", name !== "main");
+    }
+
+    function setActiveTab(tab) {
+      state.activeTab = tab;
+      $("tabTaiXiu").classList.toggle("active", tab === "tx");
+      $("tabXocDia").classList.toggle("active", tab === "xd");
+      $("viewTaiXiu").classList.toggle("active", tab === "tx");
+      $("viewXocDia").classList.toggle("active", tab === "xd");
+    }
+
+    function renderDiceDisplay() {
+      $("txDiceDisplay").innerHTML = state.txDice.map((value) => {
+        const label = value || "?";
+        return `<div class="die ${value ? "" : "empty"}">${label}</div>`;
+      }).join("");
+      const ready = state.txDice.every(Boolean);
+      $("txReadyPill").textContent = ready ? "Đủ dữ liệu" : "Chưa đủ 3 xúc sắc";
+      $("txSaveBtn").disabled = !ready;
+    }
+
+    function renderDicePicker() {
+      $("txDicePicker").innerHTML = state.txDice.map((selected, diceIndex) => {
+        const buttons = DICE_VALUES.map((num) => `
+          <button class="choice-btn ${selected === num ? "selected" : ""}" data-dice-index="${diceIndex}" data-dice-value="${num}" type="button">${num}</button>
+        `).join("");
+        return `
+          <div class="dice-row">
+            <div class="mini-label">Xúc sắc ${diceIndex + 1}</div>
+            <div class="quick-grid">${buttons}</div>
+          </div>
+        `;
+      }).join("");
+
+      document.querySelectorAll("[data-dice-index]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const index = Number(btn.dataset.diceIndex);
+          const value = Number(btn.dataset.diceValue);
+          state.txDice[index] = value;
+          renderTaiXiu();
+        });
+      });
+    }
+
+    function renderTxComboFilters() {
+      if (!$("txComboTotal").dataset.ready) {
+        const options = ['<option value="all">Tất cả tổng điểm</option>'];
+        for (let total = 3; total <= 18; total += 1) {
+          options.push(`<option value="${total}">Tổng ${total}</option>`);
+        }
+        $("txComboTotal").innerHTML = options.join("");
+        $("txComboTotal").dataset.ready = "1";
+      }
+    }
+
+    function renderTxCombos() {
+      const side = $("txComboSide").value;
+      const total = $("txComboTotal").value;
+      const combos = TX_COMBOS.filter((combo) => {
+        const sideOk = side === "all" || combo.side === side;
+        const totalOk = total === "all" || combo.total === Number(total);
+        return sideOk && totalOk;
+      });
+
+      $("txComboGrid").innerHTML = combos.map((combo, index) => `
+        <button class="combo-btn" data-combo-index="${index}" data-combo-dice="${combo.dice.join(",")}" type="button">
+          ${combo.dice.join("-")}
+          <small>${combo.total} / ${combo.side}</small>
+        </button>
+      `).join("");
+
+      document.querySelectorAll("[data-combo-dice]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.txDice = btn.dataset.comboDice.split(",").map(Number);
+          renderTaiXiu();
+        });
+      });
+    }
+
+    function renderCoinsDisplay() {
+      $("xdCoinDisplay").innerHTML = state.xdCoins.map((coin) => {
+        const label = coin === "W" ? "Trắng" : coin === "R" ? "Đỏ" : "?";
+        const cls = coin === "W" ? "white" : coin === "R" ? "red" : "empty";
+        return `<div class="coin ${cls}">${label}</div>`;
+      }).join("");
+      const ready = state.xdCoins.every(Boolean);
+      $("xdReadyPill").textContent = ready ? "Đủ dữ liệu" : "Chưa đủ 4 quân";
+      $("xdSaveBtn").disabled = !ready;
+    }
+
+    function renderCoinPicker() {
+      $("xdCoinPicker").innerHTML = state.xdCoins.map((selected, index) => `
+        <div class="coin-row">
+          <div class="mini-label">Quân ${index + 1}</div>
+          <div class="quick-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+            <button class="choice-btn ${selected === "W" ? "selected" : ""}" data-coin-index="${index}" data-coin-value="W" type="button">Trắng</button>
+            <button class="choice-btn ${selected === "R" ? "selected" : ""}" data-coin-index="${index}" data-coin-value="R" type="button">Đỏ</button>
+          </div>
+        </div>
+      `).join("");
+
+      document.querySelectorAll("[data-coin-index]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const index = Number(btn.dataset.coinIndex);
+          state.xdCoins[index] = btn.dataset.coinValue;
+          renderXocDia();
+        });
+      });
+    }
+
+    function renderXocDiaPresets() {
+      $("xdPresetPicker").innerHTML = XD_PRESETS.map((preset, index) => `
+        <button class="choice-btn" data-xd-preset="${index}" type="button">${preset.label}</button>
+      `).join("");
+      document.querySelectorAll("[data-xd-preset]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.xdCoins = [...XD_PRESETS[Number(btn.dataset.xdPreset)].coins];
+          renderXocDia();
+        });
+      });
+    }
+
+    function renderHistoryStrip(elementId, history, renderer) {
+      const el = $(elementId);
+      if (!history.length) {
+        el.innerHTML = `<div class="empty" style="min-width:100%">Chưa có kỳ nào</div>`;
+        return;
+      }
+      el.innerHTML = history.slice(0, 50).map(renderer).join("");
+    }
+
+    function renderTaiXiuSummary() {
+      const h = state.txHistory;
+      $("txCount").textContent = `${h.length} kỳ`;
+      if (!h.length) {
+        $("txLastResult").textContent = "--";
+        $("txMix").textContent = "--";
+        $("txHotFace").textContent = "--";
+        renderHistoryStrip("txHistoryStrip", h, () => "");
+        return;
+      }
+
+      const last = h[0];
+      const sideCounts = countBy(h, (item) => item.side);
+      const faceCounts = {};
+      h.forEach((item) => item.dice.forEach((face) => { faceCounts[face] = (faceCounts[face] || 0) + 1; }));
+      $("txLastResult").textContent = `${last.dice.join("-")} = ${last.total} ${last.side}`;
+      $("txMix").textContent = `T:${sideCounts["Tài"] || 0} / X:${sideCounts["Xỉu"] || 0} / B:${sideCounts["Bão"] || 0}`;
+      $("txHotFace").textContent = topEntry(faceCounts);
+      renderHistoryStrip("txHistoryStrip", h, (item) => `
+        <div class="history-chip">
+          <b>${item.total} ${item.side}</b>
+          <span>#${escapeHtml(item.period)}</span>
+          <span>${item.dice.join("-")}</span>
+        </div>
+      `);
+    }
+
+    function renderXocDiaSummary() {
+      const h = state.xdHistory;
+      $("xdCount").textContent = `${h.length} kỳ`;
+      if (!h.length) {
+        $("xdLastResult").textContent = "--";
+        $("xdMix").textContent = "--";
+        $("xdHotFace").textContent = "--";
+        renderHistoryStrip("xdHistoryStrip", h, () => "");
+        return;
+      }
+
+      const last = h[0];
+      const parityCounts = countBy(h, (item) => item.parity);
+      const shapeCounts = countBy(h, (item) => item.shape);
+      $("xdLastResult").textContent = `${last.shape} ${last.parity}`;
+      $("xdMix").textContent = `C:${parityCounts["Chẵn"] || 0} / L:${parityCounts["Lẻ"] || 0}`;
+      $("xdHotFace").textContent = topEntry(shapeCounts);
+      renderHistoryStrip("xdHistoryStrip", h, (item) => `
+        <div class="history-chip">
+          <b>${item.shape}</b>
+          <span>#${escapeHtml(item.period)}</span>
+          <span>${item.parity} / ${item.size}</span>
+        </div>
+      `);
+    }
+
+    function statRow(name, payoutLabel, rounds, profitFn) {
+      let wins = 0;
+      let profit = 0;
+      rounds.forEach((round) => {
+        const result = profitFn(round);
+        if (result.win) wins += 1;
+        profit += result.profit;
+      });
+      const total = rounds.length;
+      const hitRate = total ? wins / total : 0;
+      const ev = total ? profit / total : 0;
+      return { name, payoutLabel, wins, total, rate: pct(wins, total), hitRate, ev, profit };
+    }
+
+    function txAnalysisRows(rounds) {
+      const sideRows = [
+        statRow("Tài", "1:1", rounds, (r) => ({ win: !r.triple && r.total >= 11 && r.total <= 17, profit: !r.triple && r.total >= 11 && r.total <= 17 ? 1 : -1 })),
+        statRow("Xỉu", "1:1", rounds, (r) => ({ win: !r.triple && r.total >= 4 && r.total <= 10, profit: !r.triple && r.total >= 4 && r.total <= 10 ? 1 : -1 })),
+        statRow("Bão bất kỳ", "1:24", rounds, (r) => ({ win: r.triple, profit: r.triple ? 24 : -1 }))
+      ];
+
+      const scoreRows = Object.keys(SCORE_PAYOUT).map(Number).sort((a, b) => a - b).map((score) =>
+        statRow(`Tổng ${score}`, `1:${SCORE_PAYOUT[score]}`, rounds, (r) => ({ win: r.total === score, profit: r.total === score ? SCORE_PAYOUT[score] : -1 }))
+      );
+
+      const pairRows = [];
+      for (let a = 1; a <= 6; a += 1) {
+        for (let b = a + 1; b <= 6; b += 1) {
+          pairRows.push(statRow(`Cặp ${a}-${b}`, "1:5", rounds, (r) => {
+            const win = r.dice.includes(a) && r.dice.includes(b);
+            return { win, profit: win ? 5 : -1 };
+          }));
+        }
+      }
+
+      const faceRows = DICE_VALUES.map((face) =>
+        statRow(`Mặt ${face}`, "trúng theo số lần", rounds, (r) => {
+          const hit = r.dice.filter((value) => value === face).length;
+          return { win: hit > 0, profit: hit > 0 ? hit : -1 };
+        })
+      );
+
+      return [
+        { title: "Tài / Xỉu / Bão", rows: sideRows },
+        { title: "Tổng điểm", rows: scoreRows },
+        { title: "Cặp xúc sắc", rows: pairRows },
+        { title: "Mặt xúc sắc", rows: faceRows }
+      ];
+    }
+
+    function xdAnalysisRows(rounds) {
+      const sideRows = [
+        statRow("Chẵn", "1:0.95", rounds, (r) => ({ win: r.parity === "Chẵn", profit: r.parity === "Chẵn" ? 0.95 : -1 })),
+        statRow("Lẻ", "1:0.95", rounds, (r) => ({ win: r.parity === "Lẻ", profit: r.parity === "Lẻ" ? 0.95 : -1 })),
+        statRow("Tài", "1:0.95", rounds, (r) => ({ win: r.size === "Tài", profit: r.size === "Tài" ? 0.95 : -1 })),
+        statRow("Xỉu", "1:0.95", rounds, (r) => ({ win: r.size === "Xỉu", profit: r.size === "Xỉu" ? 0.95 : -1 })),
+        statRow("2-2", "1:1.5", rounds, (r) => ({ win: r.size === "2-2", profit: r.size === "2-2" ? 1.5 : -1 }))
+      ];
+
+      const shapePayout = { "4 trắng": 14, "3 trắng": 3, "2-2": 1.5, "1 trắng": 3, "4 đỏ": 14 };
+      const shapeRows = ["4 trắng", "3 trắng", "2-2", "1 trắng", "4 đỏ"].map((shape) =>
+        statRow(shape, `1:${shapePayout[shape]}`, rounds, (r) => ({ win: r.shape === shape, profit: r.shape === shape ? shapePayout[shape] : -1 }))
+      );
+
+      return [
+        { title: "Chẵn / Lẻ / Tài / Xỉu", rows: sideRows },
+        { title: "Dạng mặt", rows: shapeRows }
+      ];
+    }
+
+    function renderAnalysis(containerId, groups, totalRounds) {
+      const container = $(containerId);
+      if (!totalRounds) {
+        container.innerHTML = `<div class="empty">Nhập vài kỳ để bảng phân tích bắt đầu có số liệu.</div>`;
+        return;
+      }
+
+      container.innerHTML = groups.map((group) => `
+        <div>
+          <h3 class="section-title">${group.title}</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cửa</th>
+                  <th>Tỉ lệ trả</th>
+                  <th>Win</th>
+                  <th>Tỉ lệ win</th>
+                  <th>Lãi/lỗ 1đ/kỳ</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${group.rows.map((row) => `
+                  <tr>
+                    <td><strong>${row.name}</strong></td>
+                    <td>${row.payoutLabel}</td>
+                    <td>${row.wins}/${row.total}</td>
+                    <td class="rate">${row.rate}</td>
+                    <td class="${profitClass(row.profit)}">${profitText(row.profit)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function weightedPick(rounds, getter, allowed) {
+      const scores = {};
+      const counts = {};
+      rounds.forEach((round, index) => {
+        const key = getter(round);
+        const weight = 1 + Math.max(0, rounds.length - index) / Math.max(1, rounds.length);
+        scores[key] = (scores[key] || 0) + weight;
+        counts[key] = (counts[key] || 0) + 1;
+      });
+      allowed.forEach((key) => {
+        scores[key] = scores[key] || 0;
+        counts[key] = counts[key] || 0;
+      });
+      const ranked = allowed.map((key) => ({ key, score: scores[key], count: counts[key] })).sort((a, b) => b.score - a.score || b.count - a.count);
+      return ranked;
+    }
+
+    function confidenceFromRank(ranked, sample) {
+      if (!ranked.length || sample < 3) return 35;
+      const best = ranked[0].score || 0;
+      const second = ranked[1] ? ranked[1].score || 0 : 0;
+      const gap = best - second;
+      const base = 42 + Math.min(20, sample);
+      const confidence = base + Math.min(26, gap * 8);
+      return Math.round(Math.max(35, Math.min(88, confidence)));
+    }
+
+    function topStats(rows, limit) {
+      return rows
+        .filter((row) => row.total > 0 && row.wins > 0)
+        .sort((a, b) => (b.wins / b.total) - (a.wins / a.total) || b.profit - a.profit || b.wins - a.wins)
+        .slice(0, limit);
+    }
+
+    function currentStreak(history, getter) {
+      if (!history.length) return { value: "--", count: 0 };
+      const value = getter(history[0]);
+      let count = 0;
+      for (const item of history) {
+        if (getter(item) !== value) break;
+        count += 1;
+      }
+      return { value, count };
+    }
+
+    function percentText(value) {
+      return `${(value * 100).toFixed(1)}%`;
+    }
+
+    function evText(value) {
+      if (!Number.isFinite(value)) return "--";
+      const fixed = Math.abs(value) >= 10 ? value.toFixed(1) : value.toFixed(2);
+      return value > 0 ? `+${fixed}` : fixed;
+    }
+
+    function flattenPredictionRows(groups) {
+      return groups.flatMap((group) => group.rows.map((row) => {
+        const enoughSample = row.total >= PREDICTION_MIN_SAMPLE;
+        const hitOk = row.hitRate >= PREDICTION_WIN_TARGET;
+        const evOk = row.ev > 0;
+        const qualified = enoughSample && hitOk && evOk;
+        const samplePenalty = enoughSample ? 0 : (PREDICTION_MIN_SAMPLE - row.total) * 7;
+        const score = (qualified ? 1000 : 0) + (row.hitRate * 100) + (row.ev * 24) + Math.min(18, row.wins) - samplePenalty;
+        return {
+          ...row,
+          groupTitle: group.title,
+          qualified,
+          enoughSample,
+          hitOk,
+          evOk,
+          score
+        };
+      }));
+    }
+
+    function pickPredictionOptions(groups, limit = 3) {
+      const candidates = flattenPredictionRows(groups)
+        .filter((row) => row.total > 0)
+        .sort((a, b) => b.score - a.score || b.hitRate - a.hitRate || b.ev - a.ev || b.wins - a.wins);
+      return candidates.slice(0, limit);
+    }
+
+    function reasonForCandidate(row) {
+      if (row.qualified) {
+        return `Đạt chuẩn toán học: win-rate từ 80%, EV dương, đủ tối thiểu ${PREDICTION_MIN_SAMPLE} kỳ mẫu.`;
+      }
+      if (!row.enoughSample) {
+        return `Chưa đủ ${PREDICTION_MIN_SAMPLE} kỳ mẫu trong vùng đang xem, chỉ nên theo dõi.`;
+      }
+      if (!row.hitOk && !row.evOk) {
+        return "Chưa đạt win-rate 80% và EV chưa dương, không nên xem là kèo chính.";
+      }
+      if (!row.hitOk) {
+        return "EV có thể tốt nhưng win-rate chưa đạt 80%, chỉ nên theo dõi thêm.";
+      }
+      return "Win-rate đạt 80% nhưng EV chưa dương, về dài hạn chưa đẹp.";
+    }
+
+    function combinations(items, size, start = 0, prefix = [], output = []) {
+      if (prefix.length === size) {
+        output.push(prefix);
+        return output;
+      }
+      for (let i = start; i <= items.length - (size - prefix.length); i += 1) {
+        combinations(items, size, i + 1, [...prefix, items[i]], output);
+      }
+      return output;
+    }
+
+    function evaluateBundle(rounds, title, options) {
+      let totalProfit = 0;
+      let positiveRounds = 0;
+      let hitRounds = 0;
+
+      rounds.forEach((round) => {
+        let roundProfit = 0;
+        let hit = false;
+        options.forEach((option) => {
+          const profit = option.profitFn(round);
+          roundProfit += profit;
+          if (profit > -1) hit = true;
+        });
+        if (roundProfit > 0) positiveRounds += 1;
+        if (hit) hitRounds += 1;
+        totalProfit += roundProfit;
+      });
+
+      const total = rounds.length;
+      const stake = options.length;
+      const winRate = total ? positiveRounds / total : 0;
+      const coverageRate = total ? hitRounds / total : 0;
+      const ev = total ? totalProfit / total : 0;
+      const payouts = options.map((option) => option.payout).filter((value) => Number.isFinite(value));
+      const avgPayout = payouts.length ? payouts.reduce((sum, value) => sum + value, 0) / payouts.length : 0;
+      const samePayout = payouts.length && payouts.every((value) => value === payouts[0]);
+      const payoutLabel = samePayout ? `1:${payouts[0]}` : `TB 1:${avgPayout.toFixed(1)}`;
+      const qualified = total >= PREDICTION_MIN_SAMPLE && winRate >= PREDICTION_WIN_TARGET && ev > 0;
+      const samplePenalty = total >= PREDICTION_MIN_SAMPLE ? 0 : (PREDICTION_MIN_SAMPLE - total) * 10;
+      const score = (qualified ? 10000 : 0) + (winRate * 700) + (ev * 45) + (coverageRate * 120) - (stake * 12) - samplePenalty;
+
+      return {
+        title,
+        name: `${title}: ${options.map((option) => option.short).join(", ")}`,
+        options,
+        payoutLabel,
+        stake,
+        wins: positiveRounds,
+        total,
+        hitRate: winRate,
+        coverageRate,
+        ev,
+        profit: totalProfit,
+        qualified,
+        enoughSample: total >= PREDICTION_MIN_SAMPLE,
+        hitOk: winRate >= PREDICTION_WIN_TARGET,
+        evOk: ev > 0,
+        score
+      };
+    }
+
+    function bestBundle(rounds, title, options, maxSelect) {
+      if (!rounds.length || !options.length) return null;
+      const individual = options.map((option) => evaluateBundle(rounds, title, [option]))
+        .sort((a, b) => b.score - a.score || b.hitRate - a.hitRate || b.ev - a.ev);
+      const pool = options.length <= 16 ? options : individual.slice(0, Math.min(options.length, 12)).map((item) => item.options[0]);
+      const candidates = [];
+      const max = Math.min(maxSelect, pool.length);
+
+      for (let size = 1; size <= max; size += 1) {
+        combinations(pool, size).forEach((combo) => {
+          candidates.push(evaluateBundle(rounds, title, combo));
+        });
+      }
+
+      candidates.sort((a, b) => b.score - a.score || b.hitRate - a.hitRate || b.ev - a.ev || a.stake - b.stake);
+      return candidates[0] || null;
+    }
+
+    function txPredictionOptionGroups() {
+      const totalOptions = Object.keys(SCORE_PAYOUT).map(Number).sort((a, b) => a - b).map((score) => ({
+        short: String(score),
+        name: `Tổng ${score}`,
+        payout: SCORE_PAYOUT[score],
+        profitFn: (round) => round.total === score ? SCORE_PAYOUT[score] : -1
+      }));
+
+      const pairOptions = [];
+      for (let a = 1; a <= 6; a += 1) {
+        for (let b = a + 1; b <= 6; b += 1) {
+          pairOptions.push({
+            short: `${a}-${b}`,
+            name: `Cặp ${a}-${b}`,
+            payout: 5,
+            profitFn: (round) => round.dice.includes(a) && round.dice.includes(b) ? 5 : -1
+          });
+        }
+      }
+
+      const faceOptions = DICE_VALUES.map((face) => ({
+        short: `Mặt ${face}`,
+        name: `Mặt ${face}`,
+        payout: 1,
+        profitFn: (round) => {
+          const hit = round.dice.filter((value) => value === face).length;
+          return hit > 0 ? hit : -1;
+        }
+      }));
+
+      const mainOptions = [
+        { short: "Tài", name: "Tài", payout: 1, profitFn: (round) => !round.triple && round.total >= 11 && round.total <= 17 ? 1 : -1 },
+        { short: "Xỉu", name: "Xỉu", payout: 1, profitFn: (round) => !round.triple && round.total >= 4 && round.total <= 10 ? 1 : -1 },
+        { short: "Bão", name: "Bão bất kỳ", payout: 24, profitFn: (round) => round.triple ? 24 : -1 }
+      ];
+
+      return { totalOptions, pairOptions, faceOptions, mainOptions };
+    }
+
+    function xocDiaPredictionOptionGroups() {
+      const sideOptions = [
+        { short: "Chẵn", name: "Chẵn", payout: 0.95, profitFn: (round) => round.parity === "Chẵn" ? 0.95 : -1 },
+        { short: "Lẻ", name: "Lẻ", payout: 0.95, profitFn: (round) => round.parity === "Lẻ" ? 0.95 : -1 },
+        { short: "Tài", name: "Tài", payout: 0.95, profitFn: (round) => round.size === "Tài" ? 0.95 : -1 },
+        { short: "Xỉu", name: "Xỉu", payout: 0.95, profitFn: (round) => round.size === "Xỉu" ? 0.95 : -1 },
+        { short: "2-2", name: "2-2", payout: 1.5, profitFn: (round) => round.size === "2-2" ? 1.5 : -1 }
+      ];
+
+      const shapePayout = { "4 trắng": 14, "3 trắng": 3, "2-2": 1.5, "1 trắng": 3, "4 đỏ": 14 };
+      const shapeOptions = ["4 trắng", "3 trắng", "2-2", "1 trắng", "4 đỏ"].map((shape) => ({
+        short: shape,
+        name: shape,
+        payout: shapePayout[shape],
+        profitFn: (round) => round.shape === shape ? shapePayout[shape] : -1
+      }));
+
+      return { sideOptions, shapeOptions };
+    }
+
+    function buildTaiXiuBundles(rounds) {
+      const groups = txPredictionOptionGroups();
+      const totalBundle = bestBundle(rounds, "Gói Số Tổng", groups.totalOptions, 7);
+      const pairBundle = bestBundle(rounds, "Gói Cặp Xúc Sắc", groups.pairOptions, 8);
+      const faceBundle = bestBundle(rounds, "Gói Mặt Xúc Sắc", groups.faceOptions, 5);
+      const mainBundle = bestBundle(rounds, "Gói Cửa Chính", groups.mainOptions, 2);
+      const thirdBundle = [faceBundle, mainBundle].filter(Boolean).sort((a, b) => b.score - a.score)[0];
+      return [totalBundle, pairBundle, thirdBundle].filter(Boolean);
+    }
+
+    function buildXocDiaBundles(rounds) {
+      const groups = xocDiaPredictionOptionGroups();
+      const sideBundle = bestBundle(rounds, "Gói Cửa Chính", groups.sideOptions, 3);
+      const shapeBundle = bestBundle(rounds, "Gói Dạng Mặt", groups.shapeOptions, 4);
+      const mixedBundle = bestBundle(rounds, "Gói Phủ Kết Quả", [...groups.sideOptions, ...groups.shapeOptions], 4);
+      return [sideBundle, shapeBundle, mixedBundle].filter(Boolean);
+    }
+
+    function bundleReason(bundle) {
+      if (bundle.qualified) {
+        return `Gói đạt chuẩn: tỉ lệ lời ròng từ 80%, EV dương, đủ tối thiểu ${PREDICTION_MIN_SAMPLE} kỳ mẫu.`;
+      }
+      if (!bundle.enoughSample) {
+        return `Chưa đủ ${PREDICTION_MIN_SAMPLE} kỳ mẫu trong vùng đang xem, nên nhập thêm trước khi tin mạnh.`;
+      }
+      if (!bundle.hitOk && !bundle.evOk) {
+        return "Gói chưa đạt 80% và EV chưa dương, chỉ nên xem như dữ liệu tham khảo.";
+      }
+      if (!bundle.hitOk) {
+        return "EV đang dương nhưng tỉ lệ lời ròng chưa đạt 80%, cần lọc thêm hoặc chờ thêm kỳ.";
+      }
+      return "Tỉ lệ lời ròng đạt 80% nhưng EV chưa dương, đi dài hạn chưa bền.";
+    }
+
+    function renderPredictionBoard(containerId, config) {
+      const { rounds, groups, bundles, streakLabel, streak, emptyText } = config;
+      if (!rounds.length) {
+        $(containerId).innerHTML = `<div class="empty">${emptyText}</div>`;
+        return;
+      }
+
+      const picks = bundles || pickPredictionOptions(groups, 3);
+      const qualifiedCount = picks.filter((pick) => pick.qualified).length;
+      const best = picks[0];
+      const modeText = qualifiedCount ? `${qualifiedCount}/3 đạt chuẩn` : "Chưa có kèo đạt 80%";
+      const mathClass = qualifiedCount ? "good" : "";
+      const mainText = best && best.qualified ? best.title : "Theo dõi, chưa vào mạnh";
+
+      $(containerId).innerHTML = `
+        <div class="prediction-card prediction-v2">
+          <div class="prediction-hero">
+            <div>
+              <span>Bộ lọc toán học</span>
+              <strong>${mainText}</strong>
+              <div class="subtle">Chọn đúng 3 gói tốt nhất. Mỗi gói có thể gồm nhiều số hoặc nhiều cặp để cân vốn theo tỉ lệ trả.</div>
+            </div>
+            <div class="math-chip ${mathClass}">${modeText}</div>
+          </div>
+          <div class="bet-list">
+            ${picks.map((pick, index) => `
+              <div class="bet-card ${pick.qualified ? "good" : "watch"}">
+                <div class="bet-rank">${index + 1}</div>
+                <div>
+                  <div class="bet-name">${pick.title || pick.name}</div>
+                  <div class="bet-meta">Chọn ${pick.stake || 1} cửa - trả ${pick.payoutLabel}</div>
+                  ${pick.options ? `
+                    <div class="bundle-numbers">
+                      ${pick.options.map((option) => `<span class="bundle-number">${option.short}</span>`).join("")}
+                    </div>
+                  ` : ""}
+                  <div class="bet-stats">
+                    <div class="bet-stat"><span>Win-rate</span><b>${percentText(pick.hitRate)}</b></div>
+                    <div class="bet-stat"><span>EV / kỳ</span><b class="${profitClass(pick.ev)}">${evText(pick.ev)}</b></div>
+                    <div class="bet-stat"><span>Mẫu</span><b>${pick.wins}/${pick.total}</b></div>
+                  </div>
+                  <div class="standard-tag ${pick.qualified ? "" : "watch"}">${pick.qualified ? "Đạt chuẩn 80%+" : "Theo dõi"}</div>
+                  <div class="bundle-formula">Công thức gói: mỗi kỳ vào ${pick.stake || 1} cửa. Win-rate ở đây là tỉ lệ cả gói có lời ròng, không phải chỉ trúng một cửa.</div>
+                  <div class="bet-reason">${pick.options ? bundleReason(pick) : reasonForCandidate(pick)}</div>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+          <div class="notice">${streakLabel}: ${streak.value} x${streak.count}. Nếu không có lựa chọn nào đạt chuẩn 80% + EV dương, cách đọc hợp lý là đứng ngoài hoặc chờ thêm dữ liệu.</div>
+        </div>
+      `;
+    }
+
+    function renderTaiXiuPrediction() {
+      const rounds = selectedWindow(state.txHistory, $("txPredictWindow").value);
+      const streak = currentStreak(state.txHistory, (r) => r.side);
+      renderPredictionBoard("txPrediction", {
+        rounds,
+        bundles: buildTaiXiuBundles(rounds),
+        streakLabel: "Cầu Tài/Xỉu hiện tại",
+        streak,
+        emptyText: "Chưa có dữ liệu để dự đoán. Hãy nhập kết quả vài kỳ trước."
+      });
+    }
+
+    function renderXocDiaPrediction() {
+      const rounds = selectedWindow(state.xdHistory, $("xdPredictWindow").value);
+      const streak = currentStreak(state.xdHistory, (r) => r.parity);
+      renderPredictionBoard("xdPrediction", {
+        rounds,
+        bundles: buildXocDiaBundles(rounds),
+        streakLabel: "Cầu Chẵn/Lẻ hiện tại",
+        streak,
+        emptyText: "Chưa có dữ liệu để dự đoán. Hãy nhập kết quả vài kỳ trước."
+      });
+    }
+
+    function renderTaiXiuAnalysis() {
+      const rounds = selectedWindow(state.txHistory, $("txWindow").value);
+      renderAnalysis("txAnalysis", txAnalysisRows(rounds), rounds.length);
+    }
+
+    function renderXocDiaAnalysis() {
+      const rounds = selectedWindow(state.xdHistory, $("xdWindow").value);
+      renderAnalysis("xdAnalysis", xdAnalysisRows(rounds), rounds.length);
+    }
+
+    function renderTaiXiu() {
+      renderDiceDisplay();
+      renderDicePicker();
+      renderTxComboFilters();
+      renderTxCombos();
+      renderTaiXiuSummary();
+      renderTaiXiuPrediction();
+      renderTaiXiuAnalysis();
+    }
+
+    function renderXocDia() {
+      renderCoinsDisplay();
+      renderCoinPicker();
+      renderXocDiaPresets();
+      renderXocDiaSummary();
+      renderXocDiaPrediction();
+      renderXocDiaAnalysis();
+    }
+
+    function addTaiXiuRound() {
+      if (!state.txDice.every(Boolean)) return;
+      const dice = [...state.txDice];
+      const total = dice.reduce((sum, value) => sum + value, 0);
+      const triple = isTriple(dice);
+      const round = {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        period: $("txPeriod").value.trim() || nextPeriod(state.txHistory),
+        dice,
+        total,
+        triple,
+        side: txSideFromDice(dice),
+        createdAt: new Date().toISOString()
+      };
+      state.txHistory.unshift(round);
+      saveHistory(TX_KEY, state.txHistory);
+      state.txDice = [null, null, null];
+      $("txPaste").value = "";
+      $("txPeriod").value = nextPeriod(state.txHistory);
+      renderTaiXiu();
+    }
+
+    function addXocDiaRound() {
+      if (!state.xdCoins.every(Boolean)) return;
+      const coins = [...state.xdCoins];
+      const info = coinInfo(coins);
+      const round = {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        period: $("xdPeriod").value.trim() || nextPeriod(state.xdHistory),
+        coins,
+        ...info,
+        createdAt: new Date().toISOString()
+      };
+      state.xdHistory.unshift(round);
+      saveHistory(XD_KEY, state.xdHistory);
+      state.xdCoins = [null, null, null, null];
+      $("xdPaste").value = "";
+      $("xdPeriod").value = nextPeriod(state.xdHistory);
+      renderXocDia();
+    }
+
+    function parseTxPaste(value) {
+      const nums = String(value).match(/[1-6]/g) || [];
+      if (nums.length !== 3) return null;
+      return nums.map(Number);
+    }
+
+    function parseXdPaste(value) {
+      const compact = String(value).toLowerCase();
+      const coins = [];
+      for (const char of compact) {
+        if (char === "t" || char === "w") coins.push("W");
+        if (char === "d" || char === "r") coins.push("R");
+      }
+      if (coins.length !== 4) return null;
+      return coins;
+    }
+
+    function wireEvents() {
+      ["risk1", "risk2", "risk3"].forEach((id) => {
+        $(id).addEventListener("change", () => {
+          $("acceptBtn").disabled = !($("risk1").checked && $("risk2").checked && $("risk3").checked);
+        });
+      });
+
+      $("acceptBtn").addEventListener("click", () => showScreen("login"));
+
+      $("loginForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const ok = $("username").value.trim() === FIXED_USER && $("password").value === FIXED_PASS;
+        $("loginError").style.display = ok ? "none" : "block";
+        if (ok) showScreen("main");
+      });
+
+      $("logoutBtn").addEventListener("click", () => {
+        $("password").value = "";
+        showScreen("login");
+      });
+
+      $("tabTaiXiu").addEventListener("click", () => setActiveTab("tx"));
+      $("tabXocDia").addEventListener("click", () => setActiveTab("xd"));
+
+      $("txSaveBtn").addEventListener("click", addTaiXiuRound);
+      $("xdSaveBtn").addEventListener("click", addXocDiaRound);
+      $("txWindow").addEventListener("change", renderTaiXiuAnalysis);
+      $("xdWindow").addEventListener("change", renderXocDiaAnalysis);
+      $("txPredictWindow").addEventListener("change", renderTaiXiuPrediction);
+      $("xdPredictWindow").addEventListener("change", renderXocDiaPrediction);
+      $("txComboSide").addEventListener("change", renderTxCombos);
+      $("txComboTotal").addEventListener("change", renderTxCombos);
+
+      $("txPasteBtn").addEventListener("click", () => {
+        const parsed = parseTxPaste($("txPaste").value);
+        if (!parsed) {
+          alert("Nhập đúng 3 số từ 1 đến 6. Ví dụ: 456 hoặc 4 5 6.");
+          return;
+        }
+        state.txDice = parsed;
+        renderTaiXiu();
+      });
+
+      $("xdPasteBtn").addEventListener("click", () => {
+        const parsed = parseXdPaste($("xdPaste").value);
+        if (!parsed) {
+          alert("Nhập đúng 4 ký tự. T là trắng, D là đỏ. Ví dụ: TTDD.");
+          return;
+        }
+        state.xdCoins = parsed;
+        renderXocDia();
+      });
+
+      $("txClearPickBtn").addEventListener("click", () => {
+        state.txDice = [null, null, null];
+        renderTaiXiu();
+      });
+
+      $("xdClearPickBtn").addEventListener("click", () => {
+        state.xdCoins = [null, null, null, null];
+        renderXocDia();
+      });
+
+      $("txUndoBtn").addEventListener("click", () => {
+        state.txHistory.shift();
+        saveHistory(TX_KEY, state.txHistory);
+        $("txPeriod").value = nextPeriod(state.txHistory);
+        renderTaiXiu();
+      });
+
+      $("xdUndoBtn").addEventListener("click", () => {
+        state.xdHistory.shift();
+        saveHistory(XD_KEY, state.xdHistory);
+        $("xdPeriod").value = nextPeriod(state.xdHistory);
+        renderXocDia();
+      });
+
+      $("txClearAllBtn").addEventListener("click", () => {
+        if (!window.confirm("Xóa toàn bộ lịch sử Tài Xỉu trên trình duyệt này?")) return;
+        state.txHistory = [];
+        saveHistory(TX_KEY, state.txHistory);
+        $("txPeriod").value = nextPeriod(state.txHistory);
+        renderTaiXiu();
+      });
+
+      $("xdClearAllBtn").addEventListener("click", () => {
+        if (!window.confirm("Xóa toàn bộ lịch sử Xóc Đĩa trên trình duyệt này?")) return;
+        state.xdHistory = [];
+        saveHistory(XD_KEY, state.xdHistory);
+        $("xdPeriod").value = nextPeriod(state.xdHistory);
+        renderXocDia();
+      });
+    }
+
+    function init() {
+      $("txPeriod").value = nextPeriod(state.txHistory);
+      $("xdPeriod").value = nextPeriod(state.xdHistory);
+      wireEvents();
+      renderTaiXiu();
+      renderXocDia();
+      showScreen("disclaimer");
+    }
+
+    init();
+  </script>
+</body>
+</html>
